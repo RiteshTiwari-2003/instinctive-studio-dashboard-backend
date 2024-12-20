@@ -8,6 +8,7 @@ import {
   updateStudent,
   deleteStudent
 } from '../controllers/studentController.js';
+import upload from '../middleware/uploadMiddleware';
 
 const router = express.Router();
 
@@ -21,8 +22,8 @@ const validateStudent = [
 
 router.get('/', getStudents);
 router.get('/:id', getStudentById);
-router.post('/', validateStudent, createStudent);
-router.put('/:id', validateStudent, updateStudent);
+router.post('/', upload.single('image'), validateStudent, createStudent);
+router.put('/:id', upload.single('image'), validateStudent, updateStudent);
 router.delete('/:id', deleteStudent);
 
 export default router;

@@ -34,19 +34,26 @@ export const getStudentById = async (req, res) => {
 
 export const createStudent = async (req, res) => {
   try {
-    const { name, cohort, courses } = req.body;
+    const { name, cohort, courses, status } = req.body;
+    
+    // Handle the image file if it exists
+    const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
+
     const student = await prisma.student.create({
       data: {
         name,
         cohort,
+        status,
+        imageUrl,
         courses: {
-          connect: courses.map(id => ({ id }))
+          connect: courses.map(courseId => ({ id: courseId }))
         }
       },
       include: {
-        courses: true
-      }
+        courses: true,
+      },
     });
+    
     res.status(201).json(student);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -55,23 +62,31 @@ export const createStudent = async (req, res) => {
 
 export const updateStudent = async (req, res) => {
   try {
-    const { name, cohort, status, courses } = req.body;
-    const student = await prisma.student.update({
-      where: {
-        id: req.params.id
-      },
-      data: {
-        name,
-        cohort,
-        status,
-        courses: {
-          set: courses.map(id => ({ id }))
-        }
-      },
-      include: {
-        courses: true
+    const { id } = req.params;
+    const { name, cohort, courses, status } = req.body;
+    
+    // Handle the image file if it exists
+    const imageUrl = req.file ? `/uploads/${req.file.filename}` : undefined;
+
+    const updateData = {
+      name,
+      cohort,
+      status,
+      ...(imageUrl && { imageUrl }), // Only include imageUrl if a new file was uploaded
+      courses: {
+        set: [], // First disconnect all courses
+        connect: courses.map(courseId => ({ id: courseId })) // Then connect the new ones
       }
+    };
+
+    const student = await prisma.student.update({
+      where: { id },
+      data: updateData,
+      include: {
+        courses: true,
+      },
     });
+    
     res.json(student);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -80,10 +95,9 @@ export const updateStudent = async (req, res) => {
 
 export const deleteStudent = async (req, res) => {
   try {
+    const { id } = req.params;
     await prisma.student.delete({
-      where: {
-        id: req.params.id
-      }
+      where: { id },
     });
     res.status(204).send();
   } catch (error) {

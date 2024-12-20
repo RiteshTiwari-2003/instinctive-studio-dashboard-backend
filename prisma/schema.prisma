@@ -15,6 +15,7 @@ model Student {
   lastLogin   DateTime  @updatedAt
   status      String    @default("active")
   courses     Course[]  @relation("StudentToCourse")
+  imageUrl    String?   // Optional field for student profile image
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 }
