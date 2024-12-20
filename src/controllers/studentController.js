@@ -1,37 +1,40 @@
-import prisma from '../config/db.js';
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
 
-export const getStudents = async (req, res) => {
+// Get all students
+export const getAllStudents = async (req, res) => {
   try {
     const students = await prisma.student.findMany({
       include: {
-        courses: true
-      }
+        courses: true,
+      },
     });
     res.json(students);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ error: error.message });
   }
 };
 
+// Get student by ID
 export const getStudentById = async (req, res) => {
   try {
+    const { id } = req.params;
     const student = await prisma.student.findUnique({
-      where: {
-        id: req.params.id
-      },
+      where: { id },
       include: {
-        courses: true
+        courses: true,
       }
     });
     if (!student) {
-      return res.status(404).json({ message: 'Student not found' });
+      return res.status(404).json({ error: 'Student not found' });
     }
     res.json(student);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ error: error.message });
   }
 };
 
+// Create a new student
 export const createStudent = async (req, res) => {
   try {
     const { name, cohort, courses, status } = req.body;
@@ -46,7 +49,7 @@ export const createStudent = async (req, res) => {
         status,
         imageUrl,
         courses: {
-          connect: courses.map(courseId => ({ id: courseId }))
+          connect: courses ? courses.map(courseId => ({ id: courseId })) : []
         }
       },
       include: {
@@ -56,10 +59,11 @@ export const createStudent = async (req, res) => {
     
     res.status(201).json(student);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(400).json({ error: error.message });
   }
 };
 
+// Update a student
 export const updateStudent = async (req, res) => {
   try {
     const { id } = req.params;
@@ -69,14 +73,16 @@ export const updateStudent = async (req, res) => {
     const imageUrl = req.file ? `/uploads/${req.file.filename}` : undefined;
 
     const updateData = {
-      name,
-      cohort,
-      status,
-      ...(imageUrl && { imageUrl }), // Only include imageUrl if a new file was uploaded
-      courses: {
-        set: [], // First disconnect all courses
-        connect: courses.map(courseId => ({ id: courseId })) // Then connect the new ones
-      }
+      ...(name && { name }),
+      ...(cohort && { cohort }),
+      ...(status && { status }),
+      ...(imageUrl && { imageUrl }),
+      ...(courses && {
+        courses: {
+          set: [], // First disconnect all courses
+          connect: courses.map(courseId => ({ id: courseId }))
+        }
+      })
     };
 
     const student = await prisma.student.update({
@@ -89,10 +95,11 @@ export const updateStudent = async (req, res) => {
     
     res.json(student);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(400).json({ error: error.message });
   }
 };
 
+// Delete a student
 export const deleteStudent = async (req, res) => {
   try {
     const { id } = req.params;
@@ -101,6 +108,6 @@ export const deleteStudent = async (req, res) => {
     });
     res.status(204).send();
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(400).json({ error: error.message });
   }
 };

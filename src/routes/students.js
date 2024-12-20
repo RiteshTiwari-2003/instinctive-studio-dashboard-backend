@@ -1,29 +1,22 @@
 import express from 'express';
-import { body } from 'express-validator';
-import { validate } from '../middleware/validate.js';
-import {
-  getStudents,
-  getStudentById,
-  createStudent,
-  updateStudent,
-  deleteStudent
-} from '../controllers/studentController.js';
-import upload from '../middleware/uploadMiddleware';
+import { getAllStudents, getStudentById, createStudent, updateStudent, deleteStudent } from '../controllers/studentController.js';
+import upload from '../middleware/uploadMiddleware.js';
 
 const router = express.Router();
 
-// Validation middleware
-const validateStudent = [
-  body('name').notEmpty().trim().escape(),
-  body('cohort').notEmpty().trim().escape(),
-  body('courses').isArray(),
-  validate
-];
+// Get all students
+router.get('/', getAllStudents);
 
-router.get('/', getStudents);
+// Get student by ID
 router.get('/:id', getStudentById);
-router.post('/', upload.single('image'), validateStudent, createStudent);
-router.put('/:id', upload.single('image'), validateStudent, updateStudent);
+
+// Create a new student with image upload
+router.post('/', upload.single('image'), createStudent);
+
+// Update a student with optional image upload
+router.put('/:id', upload.single('image'), updateStudent);
+
+// Delete a student
 router.delete('/:id', deleteStudent);
 
 export default router;
